@@ -155,7 +155,7 @@ export const Address = ({
         {showSkeleton &&
           (isEnsNameLoading ? (
             <div className={`ml-1.5 skeleton rounded-lg font-bold ${textSizeMap[ensSize]}`}>
-              <span className="invisible">{shortAddress}</span>
+              <span className="invisible">Disconnect {shortAddress}</span>
             </div>
           ) : (
             <span className={`ml-1.5 ${textSizeMap[ensSize]} font-bold`}>

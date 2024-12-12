@@ -1,62 +1,60 @@
 "use client";
 
 // @refresh reset
+import Image from "next/image";
 import { Balance } from "../Balance";
-import { AddressInfoDropdown } from "./AddressInfoDropdown";
 import { AddressQRCodeModal } from "./AddressQRCodeModal";
-import { WrongNetworkDropdown } from "./WrongNetworkDropdown";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { Address } from "viem";
+import { useDisconnect } from "wagmi";
 import { useNetworkColor } from "~~/hooks/scaffold-eth";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth/useTargetNetwork";
-import { getBlockExplorerAddressLink } from "~~/utils/scaffold-eth";
 
 /**
- * Custom Wagmi Connect Button (watch balance + custom design)
+ * Custom Wagmi Connect Button with "Disconnect" functionality.
  */
 export const RainbowKitCustomConnectButton = () => {
-  const networkColor = useNetworkColor();
+  // const networkColor = useNetworkColor();
+  const { disconnect } = useDisconnect();
   const { targetNetwork } = useTargetNetwork();
 
   return (
     <ConnectButton.Custom>
       {({ account, chain, openConnectModal, mounted }) => {
         const connected = mounted && account && chain;
-        const blockExplorerAddressLink = account
-          ? getBlockExplorerAddressLink(targetNetwork, account.address)
-          : undefined;
 
         return (
           <>
             {(() => {
               if (!connected) {
                 return (
-                  <button className="btn btn-primary btn-sm" onClick={openConnectModal} type="button">
+                  <button
+                    className="btn btn-primary btn-md px-6 py-3 rounded-md "
+                    onClick={openConnectModal}
+                    type="button"
+                  >
+                    <Image alt="logo" width={15} height={15} src="/ethereum.svg" />
                     Connect Wallet
                   </button>
                 );
               }
 
               if (chain.unsupported || chain.id !== targetNetwork.id) {
-                return <WrongNetworkDropdown />;
+                return (
+                  <div className="text-red-500 text-sm">
+                    Unsupported network! Please switch to {targetNetwork.name}.
+                  </div>
+                );
               }
 
               return (
-                <>
-                  <div className="flex flex-col items-center mr-1">
-                    <Balance address={account.address as Address} className="min-h-0 h-auto" />
-                    <span className="text-xs" style={{ color: networkColor }}>
-                      {chain.name}
-                    </span>
-                  </div>
-                  <AddressInfoDropdown
-                    address={account.address as Address}
-                    displayName={account.displayName}
-                    ensAvatar={account.ensAvatar}
-                    blockExplorerAddressLink={blockExplorerAddressLink}
-                  />
-                  <AddressQRCodeModal address={account.address as Address} modalId="qrcode-modal" />
-                </>
+                <button
+                  className="btn btn-primary btn-md h-2 px-6 py-2 rounded-md"
+                  onClick={() => disconnect()}
+                  type="button"
+                >
+                  <Image alt="logo" width={15} height={15} src="/ethereum.svg" />
+                  <span>{`Disconnect ${account.address.slice(0, 4)}...${account.address.slice(-4)}`}</span>
+                </button>
               );
             })()}
           </>
