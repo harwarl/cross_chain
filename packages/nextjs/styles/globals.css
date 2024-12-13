@@ -7,8 +7,26 @@
   background: oklch(var(--b2));
 }
 
+/* @font-face {
+  font-family: "Geist Mono";
+  src:
+    local("GeistMono-VariableFont_wght"),
+    url("./public/fonts/GeistMono-VariableFont_wght.ttf") format("truetype");
+} */
+
+@import url("https://fonts.googleapis.com/css2?family=Geist+Mono:wght@100..900&family=Libre+Franklin:ital,wght@0,100..900;1,100..900&display=swap");
+
+html,
 body {
   min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  font-family: "Geist Mono", monospace;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 h1,
@@ -31,13 +49,24 @@ p {
   @apply shadow-none;
 }
 
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
+@layer utilities {
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
 
-/* Firefox */
-input[type="number"] {
-  -moz-appearance: textfield;
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
 }

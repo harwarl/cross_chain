@@ -13,7 +13,7 @@ import { useOutsideClick } from "~~/hooks/scaffold-eth";
  */
 export const Header = () => {
   return (
-    <div className="sticky lg:static top-0 navbar h-20 bg-transparent min-h-0 flex-shrink-0 justify-between px-0 sm:px-2">
+    <div className="sticky lg:static top-0 navbar h-20 bg-transparent min-h-0 flex-shrink-0 justify-between px-0 lg:px-32 sm:px-2">
       <div className="navbar-start w-auto lg:w-1/2">
         <Link href="/" passHref className="hidden lg:flex items-center gap-2 ml-4 mr-6 shrink-0">
           <div className="flex relative w-10 h-10">

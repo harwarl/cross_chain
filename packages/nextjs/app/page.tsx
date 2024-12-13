@@ -12,7 +12,7 @@ const Home: NextPage = () => {
   const { address: connectedAddress } = useAccount();
 
   return (
-    <div className="flex flex-col justify-center items-center mt-20">
+    <div className="flex flex-col justify-center items-center mt-32">
       {/* <div className="flex items-center flex-col flex-grow pt-10">
         <div className="px-5">
           <h1 className="text-center">
