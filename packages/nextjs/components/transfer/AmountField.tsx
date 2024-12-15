@@ -4,73 +4,19 @@ import { FaAngleDown, FaTimes } from "react-icons/fa";
 import Popup from "reactjs-popup";
 import { useBalance } from "wagmi";
 import { useAccount } from "wagmi";
+import { getDestinationToken, getSourceToken, setDestinationToken, setSourceToken } from "~~/services/store/helpers";
+import { Token, tokens, useSelectedTokenStore } from "~~/services/store/store";
 
 type AmountFieldProp = {
-  label: string;
-  placeholder: string;
-  value: string;
   onChange?: () => void;
   sendType?: boolean;
 };
 
-interface iToken {
-  id: number;
-  name: string;
-  chainId: number;
-  chain: string;
-  symbol: string;
-  address: string;
-  logo: string;
-}
-
-const tokens: iToken[] = [
-  {
-    id: 1,
-    name: "Ethereum",
-    chainId: 1,
-    chain: "ETH",
-    symbol: "ETH",
-    address: "0x0000000000000000000000000000000000000000",
-    logo: "/ethereum.svg",
-  },
-  {
-    id: 2,
-    name: "Ethereum",
-    chainId: 11155111, // Sepolia Chain ID
-    chain: "Sepolia",
-    symbol: "ETH",
-    address: "0xd38E5c25935291fFD51C9d66C3B7384494bb099A",
-    logo: "/ethereum.svg",
-  },
-  {
-    id: 3,
-    name: "Tether USD",
-    chain: "ETH",
-    chainId: 1,
-    symbol: "USDT",
-    address: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-    logo: "/tether.svg",
-  },
-];
-
-const AmountField: FC<AmountFieldProp> = ({ label, placeholder, value, onChange, sendType = true }) => {
+const AmountField: FC<AmountFieldProp> = ({ onChange, sendType = true }) => {
+  const tokens = useSelectedTokenStore(state => state.tokens);
+  let token = sendType ? getSourceToken() : getDestinationToken();
   const [open, setOpen] = useState<boolean>(false);
-  const [selectedToken, setSelectedToken] = useState(tokens[0]);
   const account = useAccount();
-
-  // useEffect(() => {
-  //   //Get the users Balance
-  //   const {
-  //     data: balance,
-  //     isLoading: loading,
-  //     isError,
-  //   } = useBalance({
-  //     address: account.address,
-  //     token: selectedToken.address,
-  //   });
-
-  //   console.log(balance);
-  // }, [selectedToken]);
 
   const {
     data: balance,
@@ -78,29 +24,36 @@ const AmountField: FC<AmountFieldProp> = ({ label, placeholder, value, onChange,
     isError,
   } = useBalance({
     address: account?.address,
-    token: selectedToken?.address,
-    chainId: selectedToken?.chainId,
+    token: token?.address,
+    chainId: token?.chainId,
   });
 
-  console.log({ balance });
-
   const closeModal = () => setOpen(false);
-  const selectToken = (token: any) => {
-    setSelectedToken(token);
+  const selectToken = (selectedToken: Token) => {
+    if (sendType) {
+      setSourceToken(selectedToken);
+      token = getSourceToken();
+    } else {
+      setDestinationToken(selectedToken);
+      token = getDestinationToken();
+    }
+
     setOpen(false);
   };
 
   return (
     <div className="mb-4 px-3 py-2 rounded-md border border-slate-700">
       {/* Label */}
-      <label className="text-sm font-medium mr-4 whitespace-nowrap capitalize">{label}</label>
+      <label className="text-sm font-medium mr-4 whitespace-nowrap capitalize">
+        {sendType ? "Send" : "Destination"}
+      </label>
 
       {/* input  */}
       <div className="flex flex-row items-center mt-3 bg-inherit rounded-md h-20 ">
         <input
           type="number"
           //   value={value}
-          placeholder={placeholder}
+          placeholder={"0"}
           className="px-3 py-2 text-white text-4xl focus:outline-none bg-transparent w-full"
           min="0"
           step="any"
@@ -115,9 +68,9 @@ const AmountField: FC<AmountFieldProp> = ({ label, placeholder, value, onChange,
             onClick={() => setOpen(open => !open)}
           >
             {/* style={{ filter: "invert(100%)" }} */}
-            <Image alt="logo" height={15} width={15} src={selectedToken.logo} />
+            <Image alt="logo" height={15} width={15} src={token.logo} />
             <span className="ml-2 font-semibold flex flex-row items-center cursor-pointer ">
-              {selectedToken.symbol.toUpperCase()}{" "}
+              {token.symbol.toUpperCase()}{" "}
               <span className="ml-2">
                 <FaAngleDown />
               </span>
