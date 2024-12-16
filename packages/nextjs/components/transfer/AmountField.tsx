@@ -1,6 +1,6 @@
 import React, { FC, useEffect, useState } from "react";
 import Image from "next/image";
-import { FaAngleDown, FaTimes } from "react-icons/fa";
+import { FaAngleDown, FaSearch, FaTimes } from "react-icons/fa";
 import Popup from "reactjs-popup";
 import { useBalance } from "wagmi";
 import { useAccount } from "wagmi";
@@ -88,6 +88,9 @@ const AmountField: FC<AmountFieldProp> = ({ onChange, sendType = true }) => {
               {/* Header Section */}
               <div className="flex flex-row justify-between items-center mb-2">
                 {/* <p className="text-lg font-semibold capitalize">Select a Token</p> */}
+                <div>
+                  <FaSearch />
+                </div>
                 <input
                   type="text"
                   // value={}
