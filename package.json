@@ -37,6 +37,7 @@
     "verify": "yarn workspace @se-2/hardhat verify"
   },
   "devDependencies": {
+    "@openzeppelin/hardhat-upgrades": "^3.7.0",
     "husky": "~8.0.3",
     "lint-staged": "~13.2.2"
   },
@@ -46,6 +47,8 @@
   },
   "dependencies": {
     "@fortawesome/react-fontawesome": "latest",
+    "@openzeppelin/contracts": "latest",
+    "circomlib": "^2.0.5",
     "react-icons": "^5.4.0",
     "reactjs-popup": "^2.0.6"
   }
