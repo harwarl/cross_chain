@@ -22,10 +22,22 @@ const AmountField: FC<AmountFieldProp> = ({ onChange, sendType = true }) => {
     data: balance,
     isLoading,
     isError,
+    error,
   } = useBalance({
     address: account?.address,
     token: token?.address,
+    blockTag: "latest",
     chainId: token?.chainId,
+    // unit: "ether",
+  });
+
+  console.log({
+    isError,
+    error,
+    chainId: token?.chainId,
+    address: account?.address,
+    balance,
+    tokenAddress: token.address,
   });
 
   const closeModal = () => setOpen(false);

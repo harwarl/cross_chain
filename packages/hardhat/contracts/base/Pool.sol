@@ -12,11 +12,30 @@ contract Pool is Ownable {
 
     mapping(bytes32 => TokenInfo) public tokenDetails;
 
+    /**
+     * @notice Emitted when a new Token is added
+     * @param symbol 
+     * @param tokenAddress 
+     * @param chainId 
+     */
     event TokenAdded(bytes32 indexed symbol, address tokenAddress, uint256 chainId);
+    
+    /**
+     * @notice Emitted when an existing token is removed
+     * @param symbol 
+     * @param chainId 
+     */
     event TokenRemoved(bytes32 indexed symbol, uint256 chainId);
 
+    /* ========== CONSTRUCTOR ========== */
     constructor() Ownable(msg.sender) {}
 
+    /**
+     * @notice adds a new token to the list of accepted tokens
+     * @param _symbol symbol of the token e.g ETH
+     * @param _chainId is the chain Id of the chain
+     * @param _tokenAddress is the address of the token to be added
+     */
     function addToken(string memory _symbol, uint256 _chainId, address _tokenAddress) external onlyOwner {
         bytes32 tokenKey = keccak256(abi.encodePacked(_symbol, _chainId));
         require(tokenDetails[tokenKey].tokenAddress == address(0), "Pool: Token already exists");
@@ -29,7 +48,11 @@ contract Pool is Ownable {
         emit TokenAdded(tokenKey, _tokenAddress, _chainId);
     }
 
-
+    /**
+     * @notice removes an existing token from the list of accepted tokens
+     * @param _symbol symbol of the token e.g ETH
+     * @param _chainId is the chain Id of the chain
+     */
     function removeToken(string memory _symbol, uint256 _chainId) external onlyOwner {
         bytes32 tokenKey = keccak256(abi.encodePacked(_symbol, _chainId));
         require(tokenDetails[tokenKey].tokenAddress != address(0), "Pool: Token does not exist");
@@ -38,11 +61,23 @@ contract Pool is Ownable {
         emit TokenRemoved(tokenKey, _chainId);
     }
 
+    /**
+     * @notice checks if a token is in the list of supported tokens
+     * @param _symbol symbol of the token e.g ETH
+     * @param _chainId is the chain Id of the chain
+     */
     function isTokenSupported(string memory _symbol, uint256 _chainId) public view returns (bool){
         bytes32 tokenKey = keccak256(abi.encodePacked(_symbol, _chainId));
         return tokenDetails[tokenKey].tokenAddress != address(0);
     }
 
+    /**
+     * @notice mints token 
+     * @param _symbol symbol of the token e.g ETH
+     * @param _chainId is the chain Id of the chain
+     * @param _to address the token is to be minted to
+     * @param _amount amount to be minted
+     */
     function _mint(
         string memory _symbol, 
         uint256 _chainId,
@@ -57,6 +92,13 @@ contract Pool is Ownable {
         IMintableBurnable(tokenInfo.tokenAddress).mint(_to, _amount);
     }
 
+    /**
+     * @notice burns the token of the sender
+     * @param _symbol symbol of the token e.g ETH
+     * @param _chainId is the chain Id of the chain
+     * @param _from address the token is to be burned from
+     * @param _amount amount to be burned
+     */
     function _burn(
         string memory _symbol,
         uint256 _chainId,
