@@ -3,6 +3,8 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interface/IMintableBurnable.sol";
+import "@openzeppelin/contracts/interfaces/IERC20.sol";
+
 
 contract Pool is Ownable {
     struct TokenInfo {
@@ -14,16 +16,16 @@ contract Pool is Ownable {
 
     /**
      * @notice Emitted when a new Token is added
-     * @param symbol 
-     * @param tokenAddress 
-     * @param chainId 
+     * @param symbol symbol of the token e.g ETH
+     * @param tokenAddress address of the token
+     * @param chainId chain of the token
      */
     event TokenAdded(bytes32 indexed symbol, address tokenAddress, uint256 chainId);
     
     /**
      * @notice Emitted when an existing token is removed
-     * @param symbol 
-     * @param chainId 
+     * @param symbol symbol of the token e.g ETH
+     * @param chainId chain of the token
      */
     event TokenRemoved(bytes32 indexed symbol, uint256 chainId);
 
@@ -105,8 +107,10 @@ contract Pool is Ownable {
         address _from,
         uint256 _amount
     ) internal {
+
         bytes32 tokenKey = keccak256((abi.encodePacked(_symbol, _chainId)));
         TokenInfo memory tokenInfo = tokenDetails[tokenKey];
+        require(IERC20(tokenInfo.tokenAddress).balanceOf(_from) > _amount, "Pool: Insuffient Balance" );
 
         require(tokenInfo.tokenAddress != address(0), "Pool: Token not supported");
         

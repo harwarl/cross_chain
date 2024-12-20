@@ -2,8 +2,8 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "./Verifier.sol";
+import "hardhat/console.sol";
 
-error ReceiptVerifier__AlreadyProcessedReceipts(bytes32);
 error ReceiptVerifier__WrongChain();
 error ReceiptVerifier__InvalidReceiptDetails();
 
@@ -43,7 +43,7 @@ contract ReceiptVerifier is Verifier {
         _verifyChainId(_receipt);
         bytes32 receiptHash = _buildHash(_receipt);
         _doubleSpendGuard(receiptHash);
-        _verifyProofWithInputs(_a, _b, _c, _receipt.publicInputs, receiptHash);
+        _verifyProofWithInputs(_a, _b, _c, _receipt.publicInputs);
     }
 
     /**
@@ -71,9 +71,7 @@ contract ReceiptVerifier is Verifier {
      * @param _receiptHash The hash of the receipt.
      */
     function _doubleSpendGuard(bytes32 _receiptHash) internal {
-        if (processedReceipts[_receiptHash]) {
-            revert ReceiptVerifier__AlreadyProcessedReceipts(_receiptHash);
-        }
+        require(processedReceipts[_receiptHash] == false, "Receipt Verifier: Already Processed Receipt");
         processedReceipts[_receiptHash] = true;
     }
 
@@ -82,7 +80,7 @@ contract ReceiptVerifier is Verifier {
      * @param _receipt The receipt details.
      */
     function _verifyChainId(Receipt memory _receipt) internal view {
-        if (_receipt.chainTo != block.chainid) {
+        if (_receipt.chainFrom != block.chainid) {
             revert ReceiptVerifier__WrongChain();
         }
     }
@@ -93,24 +91,16 @@ contract ReceiptVerifier is Verifier {
      * @param _b zk-SNARK proof part B.
      * @param _c zk-SNARK proof part C.
      * @param _publicInputs zk-SNARK public inputs.
-     * @param _receiptHash Hash of the receipt.
      */
     function _verifyProofWithInputs(
         uint256[2] calldata _a,
         uint256[2][2] calldata _b,
         uint256[2] calldata _c,
-        uint256[1] calldata _publicInputs,
-        bytes32 _receiptHash
+        uint256[1] calldata _publicInputs
     ) internal view {
         // Verify zk-SNARK proof
         bool isValid = this.verifyProof(_a, _b, _c, _publicInputs);
         require(isValid, "ReceiptVerifier: zk-SNARK verification failed");
-
-        // Ensure the public input matches the receipt hash
-        require(
-            _publicInputs[0] == uint256(_receiptHash),
-            "ReceiptVerifier: Public input mismatch"
-        );
     }
 
     /**
@@ -118,11 +108,7 @@ contract ReceiptVerifier is Verifier {
      * @param _receipt The receipt details.
      */
     function _validateReceipt(Receipt calldata _receipt) internal pure {
-        if (_receipt.amount == 0) {
-            revert ReceiptVerifier__InvalidReceiptDetails();
-        }
-        if (_receipt.chainFrom == _receipt.chainTo) {
-            revert ReceiptVerifier__InvalidReceiptDetails();
-        }
+        require(_receipt.amount != 0, "ReceiptVerifier: Invalid Receipt Details");
+        require(_receipt.chainFrom != _receipt.chainTo, "ReceiptVerifier: Invalid Receipt Details");
     }
 }

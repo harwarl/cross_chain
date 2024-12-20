@@ -6,17 +6,7 @@ const deployBridge: DeployFunction = async function (hre: HardhatRuntimeEnvironm
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
 
-  //Bridge
-  await deploy("PrivacyBridge", {
-    from: deployer,
-    log: true,
-    autoMine: true,
-  });
-
-  const privacyBridge: PrivacyBridge = await hre.ethers.getContract("PrivacyBridge");
-  const priavcyBridgeAddress = await privacyBridge.getAddress();
-
-  // POOL
+  // ++++++++++++ POOL ++++++++++++
   await deploy("Pool", {
     from: deployer,
     log: true,
@@ -24,9 +14,19 @@ const deployBridge: DeployFunction = async function (hre: HardhatRuntimeEnvironm
   });
 
   const pool: Pool = await hre.ethers.getContract("Pool");
-  const poolAddress = await pool.getAddress();
+  console.log("Pool Address -", await pool.getAddress());
 
-  //ReceiptVerifier
+  // ++++++++++++ VERIFIER ++++++++++++
+  await deploy("Verifier", {
+    from: deployer,
+    log: true,
+    autoMine: true,
+  });
+
+  const verifier: Verifier = await hre.ethers.getContract("Verifier");
+  console.log("Verifier Address -", await verifier.getAddress());
+
+  // ++++++++++++ RECEIPT VERIFIER ++++++++++++
   await deploy("ReceiptVerifier", {
     from: deployer,
     log: true,
@@ -35,8 +35,18 @@ const deployBridge: DeployFunction = async function (hre: HardhatRuntimeEnvironm
 
   const receiptVerifier: ReceiptVerifier = await hre.ethers.getContract("ReceiptVerifier");
   const receiptVerifierAddress = await receiptVerifier.getAddress();
+  console.log("receiptVerifier Address -", await receiptVerifier.getAddress());
 
-  console.log({ priavcyBridgeAddress, poolAddress, receiptVerifierAddress });
+  // ++++++++++++ PRIVACY BRIDGE ++++++++++++
+  await deploy("PrivacyBridge", {
+    from: deployer,
+    args: [receiptVerifierAddress],
+    log: true,
+    autoMine: true,
+  });
+
+  const privacyBridge: PrivacyBridge = await hre.ethers.getContract("PrivacyBridge");
+  console.log("privacyBridge Address -", await privacyBridge.getAddress());
 };
 
 export default deployBridge;
