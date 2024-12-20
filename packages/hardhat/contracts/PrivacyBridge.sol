@@ -21,7 +21,7 @@ contract PrivacyBridge is Pool, ReceiptVerifier {
         uint256 amount
     );
 
-    uint256 private nonce;
+    mapping(address => uint256) private userNonces;
     ReceiptVerifier public receiptVerifier;
     mapping(bytes32 => ReceiptVerifier.Receipt) public receipts;
     mapping(bytes32 => bool) public claimedReceipts;
@@ -59,6 +59,8 @@ contract PrivacyBridge is Pool, ReceiptVerifier {
         console.log(_symbol, sourceChainId);
         require(isTokenSupported(_symbol, sourceChainId),  "PrivacyBridge: Source chain token not supported");
 
+        uint256 currentNonce = userNonces[_sender];
+
         bytes32 receiptId = keccak256(abi.encodePacked(
             _sender,
             _recipient,
@@ -66,11 +68,11 @@ contract PrivacyBridge is Pool, ReceiptVerifier {
             _amount,
             sourceChainId,
             _destinationChainId,
-            nonce, 
+            currentNonce,
             blockhash(block.number - 1)
         ));
 
-        nonce++;
+        userNonces[_sender]++;
 
         //Generate a receipt
         ReceiptVerifier.Receipt memory receipt = ReceiptVerifier.Receipt({
