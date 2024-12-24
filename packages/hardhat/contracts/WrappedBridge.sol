@@ -64,7 +64,7 @@ contract WrappedBridge is TokenBridgeBase {
     }
 
     /// @notice get the estimated Fee for the bridging
-    function estimateBridgeFee(uint16 remoteChainId, bool useZro, bytes calldata adapterParams) external view returns (uint nativeFee, uint zroFee){
+    function estimateBridgeFees(uint16 remoteChainId, bool useZro, bytes calldata adapterParams) external view returns (uint nativeFee, uint zroFee){
         bytes memory payload = abi.encode(PT_UNLOCKING, address(this), address(this), 0, 0, false);
         return lzEndpoint.estimateFees(remoteChainId, address(this), payload, useZro, adapterParams);
     }

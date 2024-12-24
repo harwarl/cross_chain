@@ -7,6 +7,7 @@ import "./base/TokenBridgeBase.sol";
 import "@layerzerolabs/solidity-examples/contracts/lzApp/libs/LzLib.sol";
 import "./interface/IWETH.sol";
 import "./base/Verifier.sol";
+import "hardhat/console.sol";
 
 /// @dev Locks and ERC20 on the source chain and sends LZ message to the remote chain to mint a wrapped Token
 contract PrivacyBridge is TokenBridgeBase, Verifier {
@@ -64,7 +65,6 @@ contract PrivacyBridge is TokenBridgeBase, Verifier {
     function bridge(address token, uint amountLD, address to, LzLib.CallParams calldata callParams, bytes memory adapterParams) external payable nonReentrant {
         require(supportedTokens[token], "PrivacyBridge: token is not supported");
 
-        // get the contract balance of the token
         uint balanceBefore = IERC20(token).balanceOf(address(this));
         IERC20(token).safeTransferFrom(msg.sender, address(this), amountLD);
         uint balanceAfter = IERC20(token).balanceOf(address(this));

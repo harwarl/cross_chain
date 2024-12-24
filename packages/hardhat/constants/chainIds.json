@@ -1,0 +1,7 @@
+{
+  "ethereum": "1",
+  "bsc": "56",
+
+  "bsc-testnet": "97",
+  "sepolia": "11155111"
+}
