@@ -11,6 +11,7 @@ import "hardhat/console.sol";
 
 /// @dev Locks and ERC20 on the source chain and sends LZ message to the remote chain to mint a wrapped Token
 contract PrivacyBridge is TokenBridgeBase, Verifier {
+    mapping(uint256 => bool) public usedNullifiers; 
     using SafeERC20 for IERC20;
 
     /// @notice Tokens that can be bridged to the remote chain
@@ -35,6 +36,7 @@ contract PrivacyBridge is TokenBridgeBase, Verifier {
     event RegisterToken(address token);
     event RemoveToken(address token);
     event WithdrawFee(address indexed token, uint amount);
+    event ProofVerified(address sender, uint256 nullifier);
     
     constructor(address _endpoint, uint16 _remoteChainId, address _weth) TokenBridgeBase (_endpoint){
         require(_weth != address(0), "PrivacyBridge: Invalid WETH Address");
@@ -62,11 +64,29 @@ contract PrivacyBridge is TokenBridgeBase, Verifier {
     }
 
     //TODO: Actual Brigde and the layer Zero receiver function
-    function bridge(address token, uint amountLD, address to, LzLib.CallParams calldata callParams, bytes memory adapterParams) external payable nonReentrant {
-        require(supportedTokens[token], "PrivacyBridge: token is not supported");
+    function bridge(
+     address token, // to be removed
+     uint amountLD, 
+     address sender, 
+     address to, 
+     LzLib.CallParams calldata callParams, 
+     bytes memory adapterParams, 
+     uint256 nullifier,
+     uint[2] calldata a,
+     uint[2][2] calldata b,
+     uint[2] calldata c,
+     uint[5] calldata publicInput) external payable nonReentrant {
+        // require(supportedTokens[token], "PrivacyBridge: token is not supported");
+
+        // require(!usedNullifiers[nullifier], "Privacy Bridge: Nullifier already used");
+        // Verify zk-SNARK proof before proceeding
+        _verifyProofWithInputs(a, b, c, publicInput);
+
+        usedNullifiers[nullifier] = true;
+        emit ProofVerified(msg.sender, nullifier);
 
         uint balanceBefore = IERC20(token).balanceOf(address(this));
-        IERC20(token).safeTransferFrom(msg.sender, address(this), amountLD);
+        IERC20(token).safeTransferFrom(sender, address(this), amountLD);
         uint balanceAfter = IERC20(token).balanceOf(address(this));
         (uint amountWithoutDustLD, uint dust) = _removeDust(token, balanceAfter - balanceBefore);
 
@@ -214,16 +234,32 @@ contract PrivacyBridge is TokenBridgeBase, Verifier {
      * @param a zk-SNARK proof part A.
      * @param b zk-SNARK proof part B.
      * @param c zk-SNARK proof part C.
-     * @param input zk-SNARK public inputs.
+     * @param publicInput zk-SNARK public inputs.
      */
     function _verifyProofWithInputs(
         uint[2] calldata a,
         uint[2][2] calldata b,
         uint[2] calldata c,
-        uint[1] calldata input
+        uint[5] calldata publicInput
     ) internal view {
-        bool isValid = this.verifyProof(a, b, c, input);
+        //Decode the public Inputs
+        uint256 encodedNullifier = publicInput[2];
+        uint256 encodedAmount = uint160(publicInput[3]);
+        address token = uint256ToAddress(publicInput[4]);
+        address sender = uint256ToAddress(publicInput[4]);
+    
+        bool isValid = this.verifyProof(a, b, c, publicInput);
+
         require(isValid, "PrivacyBridge: zk_Snark verification failed");
+        require(!usedNullifiers[encodedNullifier], "PrivacyBridge: Nullifier already used");
+        require(encodedAmount > 0, "PrivacyBridge: Invalid transfer amount");
+
+        require(supportedTokens[token], "PrivacyBridge: Invalid token");
+        require(IERC20(token).balanceOf(sender) >= encodedAmount, "PrivacyBridge: Insufficient balance");
+    }
+    
+    function uint256ToAddress(uint256 bigInt) internal pure returns (address){
+        return address(uint160(bigInt));   
     }
 
     receive() external payable {}

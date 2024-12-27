@@ -71,7 +71,14 @@ contract WrappedBridge is TokenBridgeBase {
 
     /// @notice Bridges the localToken to the remote chain
     /// @dev Burns wrapped tokens and sends LZ message to the remote chain to unlock original tokens
-    function bridge (address localToken, uint16 remoteChainId, uint amount, address to, bool unwrapWeth, LzLib.CallParams calldata callParams, bytes memory adapterParams) external payable nonReentrant {
+    function bridge (address localToken, 
+    uint16 remoteChainId, 
+    uint amount, 
+    address to, 
+    address sender,
+    bool unwrapWeth, 
+    LzLib.CallParams calldata callParams, 
+    bytes memory adapterParams) external payable nonReentrant {
         //initial checks
         require(localToken != address(0), "WrappedBridge: invalid token");
         require(to != address(0), "WrappedBridge: invalid to");

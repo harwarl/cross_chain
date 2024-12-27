@@ -471,4 +471,10 @@ describe("TokenBridge", () => {
       expect(await privacyToken.balanceOf(owner.address)).to.be.eq(withdrawalFee);
     });
   });
+
+  describe("privacy Check", () => {
+    beforeEach(async () => {
+      
+    });
+  });
 });
