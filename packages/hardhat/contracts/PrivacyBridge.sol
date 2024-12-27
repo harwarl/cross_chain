@@ -65,25 +65,26 @@ contract PrivacyBridge is TokenBridgeBase, Verifier {
 
     //TODO: Actual Brigde and the layer Zero receiver function
     function bridge(
-     address token, // to be removed
-     uint amountLD, 
-     address sender, 
-     address to, 
+    //  address token, // to be removed already in zksnarks
+    //  uint amountLD, // already in zksnarks
+    //  address sender, // already in zksnarks
+    //  uint256 nullifier, // already in zksnarks
+    //  address to, // already in zksnarks
      LzLib.CallParams calldata callParams, 
      bytes memory adapterParams, 
-     uint256 nullifier,
      uint[2] calldata a,
      uint[2][2] calldata b,
      uint[2] calldata c,
-     uint[5] calldata publicInput) external payable nonReentrant {
+     uint[8] calldata publicInput) external payable nonReentrant {
         // require(supportedTokens[token], "PrivacyBridge: token is not supported");
 
         // require(!usedNullifiers[nullifier], "Privacy Bridge: Nullifier already used");
         // Verify zk-SNARK proof before proceeding
-        _verifyProofWithInputs(a, b, c, publicInput);
+        (uint256 encodedNullifier, uint256 amountLD, address token, address sender, address recipient ) = _verifyProofWithInputs(a, b, c, publicInput);
 
-        usedNullifiers[nullifier] = true;
-        emit ProofVerified(msg.sender, nullifier);
+        usedNullifiers[encodedNullifier] = true;
+        //msg.sender is the relayer
+        emit ProofVerified(msg.sender, encodedNullifier);
 
         uint balanceBefore = IERC20(token).balanceOf(address(this));
         IERC20(token).safeTransferFrom(sender, address(this), amountLD);
@@ -95,15 +96,30 @@ contract PrivacyBridge is TokenBridgeBase, Verifier {
             IERC20(token).safeTransfer(msg.sender, dust);
         }
 
-        _bridge(token, amountWithoutDustLD, to, msg.value, callParams, adapterParams);
+        _bridge(token, amountWithoutDustLD, recipient, msg.value, callParams, adapterParams);
     }
 
-    function bridgeNative(uint amountLD, address to, LzLib.CallParams calldata callParams, bytes memory adapterParams) external payable nonReentrant {
+    function bridgeNative(
+        // address to, 
+        LzLib.CallParams calldata callParams, 
+        bytes memory adapterParams,
+        uint[2] calldata a,
+        uint[2][2] calldata b,
+        uint[2] calldata c,
+        uint[8] calldata publicInput
+        ) external payable nonReentrant {
+        (uint256 encodedNullifier, uint256 amountLD, , , address recipient) = _verifyProofWithInputs(a, b, c, publicInput);
+
+        // Mark the nullifier as used to prevent double-spending
+        usedNullifiers[encodedNullifier] = true;
+        
+        // Emit event for proof verification
+        emit ProofVerified(msg.sender, encodedNullifier);
         require(supportedTokens[weth], "PrivacyBridge: token is not supported");
-        require(msg.value >= amountLD, "PrivacyBridge: not enough value sent");
+        // require(msg.value >= amountLD, "PrivacyBridge: not enough value sent");
         (uint amountWithoutDustLD, ) = _removeDust(weth, amountLD);
         IWETH(weth).deposit{ value: amountWithoutDustLD}();
-        _bridge(weth, amountWithoutDustLD, to, msg.value - amountWithoutDustLD, callParams, adapterParams);
+        _bridge(weth, amountWithoutDustLD, recipient, msg.value - amountWithoutDustLD, callParams, adapterParams);
     }
 
     
@@ -116,8 +132,9 @@ contract PrivacyBridge is TokenBridgeBase, Verifier {
 
         totalValueLockedSD[token] += amountSD;
         bytes memory payload = abi.encode(PT_MINT, token, to, amountSD);
+
         _lzSend(remoteChainId, payload, callParams.refundAddress, callParams.zroPaymentAddress, adapterParams, nativeFee);
-        emit SendToken(token, amountLD);
+        emit SendToken(token,  amountLD);
     }
 
     // This function is called when data is received. It overrides the equivalent function in the parent contract.
@@ -240,22 +257,33 @@ contract PrivacyBridge is TokenBridgeBase, Verifier {
         uint[2] calldata a,
         uint[2][2] calldata b,
         uint[2] calldata c,
-        uint[5] calldata publicInput
-    ) internal view {
+        uint[8] calldata publicInput
+    ) internal view returns (uint256, uint256, address, address, address){
         //Decode the public Inputs
-        uint256 encodedNullifier = publicInput[2];
-        uint256 encodedAmount = uint160(publicInput[3]);
-        address token = uint256ToAddress(publicInput[4]);
-        address sender = uint256ToAddress(publicInput[4]);
+        uint256 encodedNullifier = publicInput[3];
+        uint256 amount = uint160(publicInput[4]);
+        address token = uint256ToAddress(publicInput[5]);
+        address sender = uint256ToAddress(publicInput[6]);
+        address to = uint256ToAddress(publicInput[7]);
     
         bool isValid = this.verifyProof(a, b, c, publicInput);
-
         require(isValid, "PrivacyBridge: zk_Snark verification failed");
         require(!usedNullifiers[encodedNullifier], "PrivacyBridge: Nullifier already used");
-        require(encodedAmount > 0, "PrivacyBridge: Invalid transfer amount");
+        require(amount > 0, "PrivacyBridge: Invalid transfer amount");
+        require(to != address(0), "PrivacyBridge: Invalid address to");
+        require(sender != address(0), "PrivacyBridge: invalid address from");
+        require(token != address(0), "PrivacyBridge: invalid token address");
 
         require(supportedTokens[token], "PrivacyBridge: Invalid token");
-        require(IERC20(token).balanceOf(sender) >= encodedAmount, "PrivacyBridge: Insufficient balance");
+        require(IERC20(token).balanceOf(sender) >= amount, "PrivacyBridge: Insufficient balance");
+
+        return (
+            encodedNullifier,
+            amount, 
+            token, 
+            sender,
+            to
+        );
     }
     
     function uint256ToAddress(uint256 bigInt) internal pure returns (address){

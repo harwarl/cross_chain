@@ -75,7 +75,7 @@ contract WrappedBridge is TokenBridgeBase {
     uint16 remoteChainId, 
     uint amount, 
     address to, 
-    address sender,
+    // address sender,
     bool unwrapWeth, 
     LzLib.CallParams calldata callParams, 
     bytes memory adapterParams) external payable nonReentrant {
